@@ -16,7 +16,7 @@ int main(int argc, char *argv[]){
 	for(int i = 0; i<count; i++){
 		printf("The age of %s is %d\n", cur_name[i], cur_age[i]);
 	}
-	printf("---\n";
+	printf("---\n");
 
 	for(int i = 0; i<count; i++){
 		printf("The ages of %s is %d\n", *(cur_name+i), *(cur_age+i));

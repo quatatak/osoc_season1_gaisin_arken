@@ -1,29 +1,28 @@
-#include <stdio.h>
+#include<stdio.h>
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 	int numbers[4] = {0};
-	char name[4] = {'a'};
+	char names[4] = {'a'};
+	printf("%d %d %d %d\n",numbers[0], numbers[1], numbers[2], numbers[3]);
+	printf("%c %c %c %c\n", names[0], names[1], names[2], names[3]);
 
-	printf("The numbers are %d %d %d %d\n", numbers[0], numbers[1], numbers[2], numbers[3]);
-	printf("The name is %c %c %c %c\n", name[0], name[1], name[2], name[3]);
+	printf("%s\n", names);
 
-	numbers[0] = 0;
-	numbers[1] = 1;
-	numbers[2] = 2;
-	numbers[3] = 3;
+	numbers[0] = 1;
+	numbers[1] = 2;
+	numbers[2] =3;
+	numbers[3] = 4;
 
-	name[0] = 'N';
-	name[1] = 'e';
-	name[2] = 'd';
-	name[3] = 'o';
-	printf("The numbers are %d %d %d %d\n", numbers[0], numbers[1], numbers[2], numbers[3]);
-	printf("The name is %c %c %c %c\n", name[0], name[1], name[2], name[3]);
-	
-	char *another = "Ned";
-	printf("Another name is: %s\n", another);
-	printf("%c %c %c %c\n", another[0], another[1], another[2], another[3]);
-	printf("%s\n", name);
+	names[0] = 'J';
+	names[1] = 'o';
+	names[2] = 'n';
+	names[3] = '\0';
 
-	printf("\nPrikol :%d", name[0]);
+	printf("%d %d %d %d\n", numbers[0], numbers[1], numbers[2], numbers[3]);
+	printf("%c %c %c %c\n", names[0], names[1], names[2], names[3]);
+
+	char *another = "Jon";
+	printf("%s\n", another);
+	printf("%s\n", names);
 	return 0;
 }
