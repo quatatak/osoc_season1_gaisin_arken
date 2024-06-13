@@ -1,11 +1,13 @@
+/****** alu.sv ******/
 typedef enum logic [1:0] {
 	add = 2'h1,
 	sub = 2'h2,
 	nop = 2'h0
 } operation_t;
 
-module alu #(parameter WIDTH = 6)
-(
+module alu #(
+	parameter WIDTH = 6
+) (
 	input clk,
 	input rst,
 
@@ -42,21 +44,22 @@ module alu #(parameter WIDTH = 6)
 		result = '0;
 		if(in_valid_r) begin
 			case(op_in_r)
-				add: result = a_in_r+b_in_r;
-				sub:result = a_in_r +(~b_in_r+1'b1);
-				default:result = '0;
+				add: result = a_in_r + b_in_r;
+				sub: result = a_in_r +(~b_in_r+1'b1);
+				default: result = '0;
 			endcase
 		end
 	end
 
-	always_ff @(posedge clk, posedge rst) begin
-		if(rst) begin
+	always_ff @ (posedge clk, posedge rst) begin
+		if (rst) begin
 			out <= '0;
 			out_valid <= '0;
-		end else begin
+		end 
+		else begin
 			out <= result;
 			out_valid <= in_valid_r;
 		end
 	end
-	endmodule;
+endmodule;
 	
