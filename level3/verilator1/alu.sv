@@ -3,7 +3,7 @@ typedef enum logic [1:0] {
 	add = 2'h1,
 	sub = 2'h2,
 	nop = 2'h0
-} operation_t;
+} operation_t /*verilator public*/;
 
 module alu #(
 	parameter WIDTH = 6
@@ -14,20 +14,20 @@ module alu #(
 	input operation_t op_in,
 	input [WIDTH-1:0] a_in,
 	input [WIDTH-1:0] b_in,
-	input 		  in_valid,
+	input in_valid,
 
 	output logic [WIDTH-1:0] out,
-	output logic             out_valid
+	output logic out_valid
 );
 
 	operation_t op_in_r;
 	logic [WIDTH-1:0] a_in_r;
 	logic [WIDTH-1:0] b_in_r;
-	logic             in_valid_r;
+	logic in_valid_r;
 	logic [WIDTH-1:0] result;
 
 	always_ff @(posedge clk, posedge rst) begin
-		if(rst) begin
+		if (rst) begin
 			op_in_r<='0;
 			a_in_r<='0;
 			b_in_r <= '0;
@@ -51,7 +51,7 @@ module alu #(
 		end
 	end
 
-	always_ff @ (posedge clk, posedge rst) begin
+	always_ff @(posedge clk, posedge rst) begin
 		if (rst) begin
 			out <= '0;
 			out_valid <= '0;
