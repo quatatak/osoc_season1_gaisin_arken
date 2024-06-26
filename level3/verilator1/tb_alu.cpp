@@ -5,34 +5,161 @@
 #include "Valu.h"
 #include "Valu___024unit.h"
 #include <cstdlib>
+#include <deque>
 
 #define MAX_SIM_TIME 300
 vluint64_t sim_time = 0;
 vluint64_t posedge_cnt = 0;
 #define VERIF_START_TIME 7
-void check_out_valid(Valu *dut, vluint64_t &sim_time){
-	static unsigned char in_valid = 0;
-	static unsigned char in_valid_d = 0;
-	static unsigned char out_valid_exp = 0;
 
-	if(sim_time >= VERIF_START_TIME){
-		out_valid_exp = in_valid_d;
-		in_valid_d = in_valid;
-		in_valid = dut->in_valid;
-		if(out_valid_exp != dut->out_valid) {
-			std::cout<<"ERROR: out_valid_mismatch, "
-				<< "exp : " << (int)(out_valid_exp)
-				<< "recv : " << (int)(dut->out_valid)
-				<< "simtime : " << sim_time << std::endl;
+class AluInTx {
+	public:
+		uint32_t a;
+		uint32_t b;
+		enum Operation {
+			add = Valu___024unit::operation_t::add,
+			sub = Valu___024unit::operation_t::sub,
+			nop = Valu___024unit::operation_t::nop
+		} op;
+};
+
+AluInTx* rndAluInTx(){
+	if(rand()%5 == 0){
+		AluInTx *tx = new AluInTx();
+		tx->op = AluInTx::Operation(rand()%3);
+		tx->a = rand()%11 + 10;
+		tx->b = rand()%6;
+		return tx;
+	} else {
+		return NULL;
+	}
+}
+
+class AluInDrv {
+	private:
+		Valu *dut;
+	public:
+		AluInDrv(Valu *dut){
+			this->dut = dut;
 		}
-	}
-}
+		void drive(AluInTx *tx){
+			dut->in_valid = 0;
+			if(tx!=NULL){
+				if(tx->op != AluInTx::nop){
+					dut->in_valid = 1;
+					dut->op_in = tx->op;
+					dut->a_in = tx->a;
+					dut->b_in = tx->b;
+				}
+				delete tx;
+			}
+		}
+};
 
-void set_rnd_out_valid(Valu *dut, vluint64_t &sim_time){
-	if(sim_time >= VERIF_START_TIME) {
-		dut->in_valid = rand()%2;
-	}
-}
+class AluOutTx {
+	public:
+		uint32_t out;
+};
+
+class AluScb {
+	private:
+		std::deque<AluInTx*> in_q;
+
+	public:
+		//input interface monitor port
+		void writeIn(AluInTx* tx){
+			//push the received item into the deque
+			in_q.push_back(tx);
+		}
+
+		//Output interface monitor port
+		void writeOut(AluOutTx* tx){
+			//we should never get any data from the output interface
+			//before any input gets driven to the input interface
+			if(in_q.empty()){
+				std::cout<<"Fatal Error in AluScb: empty AluInTx queue"<<std::endl;
+				exit(1);
+			}
+
+			//Grab the item from the front of the queue
+			AluInTx* in;
+			in = in_q.front();
+			in_q.pop_front();
+			switch(in->op){
+				case AluInTx::nop :
+					std::cout << "Fatal Error in AluScb: received NOP on input"<<std::endl;
+					exit(1);
+					break;
+				case AluInTx::add :
+					if(in->a + in->b != tx->out){
+						std::cout<<std::endl;
+						std::cout<<"AluScb: add mismatch" << std::endl;
+						std::cout<< " Expected: "<<in->a + in->b
+							<< " Actual: " <<tx->out<<std::endl;
+						std::cout<< "Simtime: "<<sim_time<<std::endl;
+					}
+					break;
+				case AluInTx::sub :
+					if(in->a - in->b != tx->out){
+						std::cout<<std::endl;
+						std::cout<<"AluScb: sub mismatch"<<std::endl;
+						std::cout<< " Expected: " << in->a - in->b
+							<< " Actual: " << std::endl;
+						std::cout<< "Simtime: "<< sim_time << std::endl;
+					}
+					break;
+			}
+			delete in;
+			delete tx;
+		}
+};
+
+class AluInMon {
+        private:
+                Valu *dut;
+                AluScb *scb;
+        public:
+                AluInMon(Valu *dut, AluScb *scb){
+                        this->dut = dut;
+                        this->scb = scb;
+                }
+                void monitor(){
+                        if(dut->in_valid == 1) {
+                                //if there is a valid input
+                                //create a tx item and populate
+                                //it with data observed at the pins
+                                AluInTx *tx = new AluInTx();
+                                tx->op = AluInTx::Operation(dut->op_in);
+                                tx->a = dut->a_in;
+                                tx->b = dut->b_in;
+                                //then pass it to the scoreboard
+                                scb->writeIn(tx);
+                        }
+                }
+
+};
+
+class AluOutMon{
+        private:
+                Valu *dut;
+                AluScb *scb;
+        public:
+                AluOutMon(Valu *dut, AluScb *scb){
+                        this->dut = dut;
+                        this->scb = scb;
+                }
+
+                void monitor(){
+                        if(dut->out_valid == 1){
+                                //if there is a valid output create a new tx
+                                //and populate it with the output
+                                AluOutTx *tx = new AluOutTx();
+                                tx->out = dut->out;
+                                //then pass it to the scb
+                                scb->writeOut(tx);
+                        }
+                }
+};
 
 void dut_reset (Valu *dut, vluint64_t & sim_time){
         dut->rst = 0;
@@ -54,6 +181,12 @@ int main(int argc, char** argv, char** env) {
 	VerilatedVcdC *m_trace = new VerilatedVcdC;
 	dut->trace(m_trace, 5);
 	m_trace->open("waveform.vcd");
+	AluInTx *tx;
+	//driver, scoreboard, input, output monitors
+	AluInDrv *drv = new AluInDrv(dut);
+	AluScb *scb = new AluScb();
+	AluInMon *inMon = new AluInMon(dut, scb);
+	AluOutMon *outMon = new AluOutMon(dut, scb);
 
 	while(sim_time < MAX_SIM_TIME){
 		dut_reset(dut, sim_time);
@@ -62,40 +195,31 @@ int main(int argc, char** argv, char** env) {
 		dut->eval();
 		
 		if(dut->clk==1){
-			dut->in_valid = 0;
-			posedge_cnt++;
-			switch (posedge_cnt){
-				case 10:
-					dut->in_valid = 1;
-					dut->a_in = 5;
-					dut->b_in = 3;
-					dut->op_in = Valu___024unit::operation_t::add;
-					break;
-				case 12:
-					if(dut->out != 8){
-						std::cout<<"Addition failed @ "<<sim_time<<std::endl;
-					}
-					break;
-				case 20:
-					dut->in_valid = 1;
-					dut->a_in = 5;
-					dut->b_in = 3;
-					dut->op_in = Valu___024unit::operation_t::sub;
-					break;
-				case 22:
-					if(dut->out != 2){
-						std::cout<<"Subtraction failed @ "<<sim_time<<std::endl;
-					}
-					break;
+			if(sim_time >= VERIF_START_TIME) {
+				//generate a randomized item of AluInTx
+				tx = rndAluInTx();
+
+				//pass the tx to the input driver
+				//which drives the interface
+				drv->drive(tx);
+
+				//monitor inputs
+				inMon->monitor();
+				//monitor outputs
+				outMon->monitor();
 			}
-			check_out_valid(dut, sim_time);
 		}
-		
+		//end of posedge processing
+
 		m_trace->dump(sim_time);
 		sim_time++;
 	}
 	
 	m_trace->close();
 	delete dut;
+	delete outMon;
+	delete inMon;
+	delete scb;
+	delete drv;
 	exit(EXIT_SUCCESS);
 }
