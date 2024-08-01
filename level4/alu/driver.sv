@@ -1,7 +1,7 @@
 class alu_driver extends uvm_driver #(alu_packet);
 	`uvm_component_utils(alu_driver)
 
-	alu_interface intf;
+	virtual alu_interface intf;
 	alu_packet    pkt;
 
 	function new(string name = "alu_driver", uvm_component parent = null);
@@ -12,7 +12,9 @@ class alu_driver extends uvm_driver #(alu_packet);
                 //build other components
 		pkt = alu_packet::type_id::create("Driver Packet");	
 		//get method
-		uvm_config_db #(virtual alu_interface)::get(null, "*", "intf", intf);
+		if (!uvm_config_db #(virtual alu_interface)::get(this, "", "alu_interface", intf);) 
+			`uvm_error("","uvm_config_db::get failed")
+
         endfunction
 
         //connections
