@@ -1,8 +1,8 @@
 module log (
-    input  wire [15:0] in_a,
-    input  wire [15:0] in_b,
-    input  wire [ 3:0] sel,
-    output wire [15:0] lout
+    logic [15:0] in_a,
+    logic [15:0] in_b,
+    logic [ 3:0] sel,
+    logic [15:0] lout
 );
   always_comb begin
     case (sel)
@@ -22,6 +22,7 @@ module log (
       4'b1101: lout = in_a | (~in_b);
       4'b1110: lout = in_a | in_b;
       4'b1111: lout = in_a;
+      default: lout = 16'h0;
     endcase
   end
 endmodule

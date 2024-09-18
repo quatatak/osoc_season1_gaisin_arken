@@ -1,11 +1,11 @@
 module arithmetic (
-    input wire [15:0] in_a,
-    input wire [15:0] in_b,
-    input wire cin,
-    input wire [3:0] sel,
-    output wire [15:0] ArOut,
-    output wire cout,
-    output wire compare
+    logic [15:0] in_a,
+    logic [15:0] in_b,
+    logic cin,
+    logic [3:0] sel,
+    logic [15:0] ArOut,
+    logic cout,
+    logic compare
 );
   assign compare = in_a == in_b;
   always_comb begin
