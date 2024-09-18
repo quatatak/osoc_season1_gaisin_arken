@@ -1,9 +1,9 @@
 module adder16 (
-    input wire [15:0] in_a,
-    input wire [15:0] in_b,
-    input wire cin,
-    output wire cout,
-    output wire [15:0] out
+    logic [15:0] in_a,
+    logic [15:0] in_b,
+    logic cin,
+    logic cout,
+    logic [15:0] out
 );
   wire [16:0] cout_arr;
   assign cout_arr[0] = cin;
